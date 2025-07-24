@@ -1,4 +1,3 @@
-import BoardManagerError from '../Errors/BoardManagerError';
 import ScoreManager from './ScoreManager';
 import { IBoardManager } from './types/interface';
 
@@ -10,10 +9,12 @@ import { IBoardManager } from './types/interface';
 export default class BoardManager implements IBoardManager {
   private _board: HTMLElement | null;
   private _boardSize: number;
-  private _boardCells: NodeListOf<HTMLElement>;
+  private _boardCells: NodeListOf<HTMLElement> | null;
   private _currentPosition: number | null = null;
-  private _boardSelector: string;
   private _scoreManager: ScoreManager;
+  private _missedGoblinCount: number = 0;
+  private _goblinClicked: boolean = false;
+  private _moveIntervalId: number | null = null;
 
   constructor(
     boardSize: number = 4,
@@ -21,9 +22,7 @@ export default class BoardManager implements IBoardManager {
     scoreManager: ScoreManager
   ) {
     this._board = document.querySelector(boardSelector);
-    this._boardSelector = boardSelector;
     this._scoreManager = scoreManager;
-
     this._boardSize = boardSize ** 2;
     // Инициализация заглушкой, будет перезаписана в drawBoard
     this._boardCells = [] as unknown as NodeListOf<HTMLElement>;
@@ -42,21 +41,17 @@ export default class BoardManager implements IBoardManager {
    * Отрисовывает игровое поле
    */
   public drawBoard(): void {
-    if (!this._board) {
-      throw new BoardManagerError(
-        `Элемент с селектором "${this._boardSelector}" не найден в DOM`
-      );
-    }
-
     const boardSize = this.boardSize;
 
     for (let i = 0; i < boardSize; i++) {
       const cell = document.createElement('div');
       cell.classList.add('cell');
-      this._board.appendChild(cell);
+      this._board?.appendChild(cell);
     }
 
-    this._boardCells = this._board.querySelectorAll<HTMLElement>('.cell');
+    this._boardCells =
+      this._board?.querySelectorAll<HTMLElement>('.cell') || null;
+
     const startPosition = this._getRandomPosition();
     this._addPersonToCell(startPosition);
     this._currentPosition = startPosition;
@@ -68,13 +63,26 @@ export default class BoardManager implements IBoardManager {
    * @param {number} interval - интервал в миллисекундах
    */
   public movingPersonThroughTheCells(interval: number): void {
-    setInterval(() => {
-      if (this._currentPosition !== null) {
-        const currentCell = this._boardCells[this._currentPosition];
-        const person = currentCell.querySelector('.person');
-        if (person) person.remove();
+    if (this._moveIntervalId !== null) return;
+    this._moveIntervalId = window.setInterval(() => {
+      // Проверяем, был ли гоблин пойман с момента последнего перемещения
+      if (!this._goblinClicked) {
+        this._incrementMissedCount();
+      } else {
+        // Сбрасываем флаг после успешного клика
+        this._goblinClicked = false;
       }
 
+      // Если достигнуто 5 промахов — завершаем игру
+      if (this._missedGoblinCount >= 5) {
+        this._endGame();
+        return;
+      }
+
+      // Удаляем персонажа с текущей позиции
+      this._removePersonFromCurrentCell();
+
+      // Перемещаем персонажа на новую случайную позицию
       const newPosition = this._getRandomPosition();
       this._addPersonToCell(newPosition);
       this._currentPosition = newPosition;
@@ -110,6 +118,8 @@ export default class BoardManager implements IBoardManager {
     const person = document.createElement('div');
     person.classList.add('person');
 
+    if (this._boardCells === null) return;
+
     const targetCell = this._boardCells[position];
     if (targetCell) {
       targetCell.appendChild(person);
@@ -124,12 +134,88 @@ export default class BoardManager implements IBoardManager {
    * @private
    */
   private _boardClickHandler(): void {
-    this._board?.addEventListener('click', (e) => {
-      const targetCell = e.target as HTMLElement;
-      if (targetCell.classList.contains('person')) {
-        this._scoreManager.score += 1;
-        targetCell.remove();
-      }
-    });
+    if (!this._board) return;
+
+    // Удаляем старый обработчик, чтобы избежать дублирования
+    this._board.removeEventListener('click', this._handleBoardClick);
+    this._board.addEventListener('click', this._handleBoardClick);
+  }
+
+  /**
+   * Внешний обработчик клика (привязан к экземпляру)
+   *
+   * @private
+   */
+  private _handleBoardClick = (e: MouseEvent): void => {
+    const target = e.target as HTMLElement;
+
+    if (target.classList.contains('person')) {
+      this._onGoblinHit(target);
+    } else if (target.classList.contains('cell')) {
+      this._onEmptyCellClick();
+    }
+  };
+
+  /**
+   * Вызывается при попадании по гоблину
+   *
+   * @private
+   */
+  private _onGoblinHit(personElement: HTMLElement): void {
+    this._scoreManager.score += 1;
+    personElement.remove();
+    this._goblinClicked = true;
+  }
+
+  /**
+   * Вызывается при клике по пустой ячейке
+   *
+   * @private
+   */
+  private _onEmptyCellClick(): void {
+    this._missedGoblinCount++;
+    if (this._missedGoblinCount >= 5) this._endGame();
+  }
+
+  /**
+   * Увеличивает счётчик промахов и проверяет, нужно ли завершить игру
+   *
+   * @private
+   */
+  private _incrementMissedCount(): void {
+    this._missedGoblinCount++;
+  }
+
+  /**
+   * Удаляет персонажа с текущей ячейки
+   *
+   * @private
+   */
+  private _removePersonFromCurrentCell(): void {
+    if (this._currentPosition === null || this._boardCells === null) return;
+
+    const currentCell = this._boardCells[this._currentPosition];
+    const person = currentCell.querySelector('.person');
+
+    if (person) person.remove();
+  }
+
+  /**
+   * Завершает игру: отправляет событие и останавливает движение гоблинов
+   *
+   * @private
+   */
+  private _endGame(): void {
+    if (this._board) {
+      const event = new CustomEvent('gameOver', {
+        detail: { missedCount: this._missedGoblinCount },
+      });
+      this._board.dispatchEvent(event);
+    }
+
+    if (this._moveIntervalId !== null) {
+      clearInterval(this._moveIntervalId);
+      this._moveIntervalId = null;
+    }
   }
 }

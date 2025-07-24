@@ -33,5 +33,26 @@ export default class GoblinGame implements IGoblinGame {
 
     // Инициализация менеджера баллов
     this._scopeManager.createScoreDisplay(this._boardSelector);
+
+    // Добавляем обработчик события gameOver
+    this._handleGameOver();
+  }
+
+  /**
+   * Обработка завершения игры
+   */
+  private _handleGameOver(): void {
+    const boardElement = document.querySelector(this._boardSelector);
+    if (boardElement) {
+      boardElement.addEventListener('gameOver', () => this._gameOverResult());
+    }
+  }
+
+  /**
+   * Результат завершения игры
+   */
+  private _gameOverResult(): void {
+    alert('Игра окончена! Вы пропустили 5 гоблинов.');
+    window.location.reload();
   }
 }
