@@ -102,20 +102,6 @@ export default {
           globOptions: {
             ignore: ['**/.DS_Store'],
           },
-          transform: async (content, absoluteFrom) => {
-            const { default: imagemin } = await import('imagemin');
-            const { default: imageminWebp } = await import('imagemin-webp');
-            const fs = await import('fs');
-
-            const optimized = await imagemin.buffer(content, {
-              plugins: [imageminWebp({ quality: 75 })],
-            });
-
-            const webpPath = absoluteFrom.replace(/\.(jpe?g|png)$/i, '.webp');
-            await fs.promises.writeFile(webpPath, optimized);
-
-            return content;
-          },
         },
       ],
     }),

@@ -1,5 +1,7 @@
 # Домашнее задание к занятию "3.Обработка событий"
 
+[![CI Pipeline](https://github.com/stormozov/ahj-event-handle/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/stormozov/ahj-event-handle/actions/workflows/ci.yml)
+
 ## Игра с гоблинами
 
 ![alt text](https://github.com/netology-code/ahj-homeworks/raw/AHJ-50/events/pic/GracefulMiniatureBustard-small.gif)

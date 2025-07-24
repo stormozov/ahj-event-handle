@@ -1,16 +1,39 @@
-/* body */
 body {
-  box-sizing: border-box;
   font-family: 'Roboto', sans-serif;
-  font-size: 23px;
-  background-color: antiquewhite;
+  font-size: 16px;
+  color: #999;
+
+  margin: 0;
+}
+
+h1 {
+  font-size: 2.25em;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+
+  margin-bottom: 24px;
+}
+
+a {
+  color: #999;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+#root {
+  padding: 100px 0;
+}
+
+.section {
+  padding: 20px;
 }
 
 .container {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
-}
-
-.webpack-img {
-  width: 100%;
 }

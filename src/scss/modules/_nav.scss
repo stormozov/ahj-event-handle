@@ -1,3 +1,27 @@
-.nav {
-  color: red;
+.main-ui {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  a {
+    display: block;
+
+    width: 255px;
+    padding: 12px 24px;
+    border-radius: 6px;
+    background-color: #d6d6d6;
+
+    font-weight: bold;
+    color: #242121;
+    text-align: center;
+
+    transition: all 0.3s ease-in-out;
+
+    &:hover {
+      background-color: #242121;
+      color: #d6d6d6;
+      transform: scale(1.1);
+    }
+  }
 }

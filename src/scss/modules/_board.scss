@@ -1,0 +1,30 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 100px);
+  grid-template-rows: repeat(4, 100px);
+  gap: 10px;
+
+  justify-content: center;
+}
+
+.cell {
+  position: relative;
+
+  width: 100px;
+  height: 100px;
+  background-color: #dadada;
+  border-radius: 6px;
+}
+
+.person {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 100px;
+  height: 100px;
+
+  background: #ff7878 url('../assets/images/goblin.png') no-repeat center /
+    contain;
+  border-radius: 6px;
+}
